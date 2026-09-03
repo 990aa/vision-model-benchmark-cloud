@@ -95,7 +95,7 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with: { path: site }
       - id: deploy
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
       - run: python -m bench.status stage PUBLISH "" done
       - run: python bench/notify.py
       - run: python -m bench.status stage NOTIFY "" done
