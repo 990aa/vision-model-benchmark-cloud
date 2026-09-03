@@ -1,0 +1,10 @@
+sample_size: 100
+models:
+  - id: microsoft/resnet-50
+    task: classification
+  - id: google/vit-base-patch16-224
+    task: classification
+  - id: facebook/detr-resnet-50
+    task: detection
+  - id: hustvl/yolos-small
+    task: detection
