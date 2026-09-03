@@ -1,22 +1,23 @@
+variable "github_owner" {}
+variable "repo" { default = "vision-model-benchmark-cloud" }
+
 terraform {
   required_providers {
-    cloudflare = { source = "cloudflare/cloudflare" }
-    neon       = { source = "neondatabase/neon" }
-    github     = { source = "integrations/github" }
+    github = { source = "integrations/github" }
+    neon   = { source = "neondatabase/neon" }
   }
 }
 
-resource "cloudflare_r2_bucket" "artifacts" {
-  account_id = var.cloudflare_account_id
-  name       = "vision-bench-artifacts"
+provider "github" {
+  owner = var.github_owner
 }
 
 resource "neon_project" "bench" {
-  name = "vision-bench"
+  name = "vision-benchmark"
 }
 
-resource "github_actions_variable" "r2_public_url" {
-  repository    = var.repo_name
-  variable_name = "R2_PUBLIC_URL"
-  value         = var.r2_public_url
+resource "github_actions_variable" "pages_url" {
+  repository    = var.repo
+  variable_name = "PAGES_URL"
+  value         = "https://${var.github_owner}.github.io/${var.repo}/"
 }
