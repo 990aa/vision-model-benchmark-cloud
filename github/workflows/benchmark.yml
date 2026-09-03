@@ -1,0 +1,66 @@
+name: vision-benchmark
+on:
+  workflow_dispatch:
+  push:
+    paths: ["bench/config/models.yaml"]
+
+env:
+  RUN_ID: ${{ github.run_id }}
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install -r bench/requirements.txt
+      - run: python -m bench.status INIT "" running
+        env: { DATABASE_URL: "${{ secrets.DATABASE_URL }}" }
+      - run: python -m bench.prepare          # samples 100 images from HF datasets
+      - run: python -m bench.status DATASET "" done
+      - uses: actions/upload-artifact@v4
+        with: { name: sample, path: data/sample }
+
+  eval:
+    needs: prepare
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - { model: microsoft/resnet-50,        task: classification }
+          - { model: google/vit-base-patch16-224, task: classification }
+          - { model: facebook/detr-resnet-50,     task: object_detection }
+          - { model: hustvl/yolos-small,          task: object_detection }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - uses: actions/download-artifact@v4
+        with: { name: sample, path: data/sample }
+      - run: pip install -r bench/requirements.txt
+      - run: python -m bench.status EVAL "${{ matrix.model }}" running
+      - run: python -m bench.run_model "${{ matrix.model }}" "${{ matrix.task }}"
+      - run: python -m bench.status EVAL "${{ matrix.model }}" done
+      - uses: actions/upload-artifact@v4
+        with: { name: "out-${{ matrix.model }}", path: out/ }
+
+  publish:
+    needs: eval
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { pattern: "out-*", path: out/, merge-multiple: true }
+      - run: pip install -r bench/requirements.txt
+      - run: python -m bench.aggregate        # writes results table to Neon
+      - run: python -m bench.upload_r2        # pushes visual images to R2
+      - run: python -m bench.status PUBLISH "" running
+      - run: python bench/site/build_site.py  # builds visual report
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: site/ }
+      - uses: actions/deploy-pages@v4
+      - run: python -m bench.status NOTIFY "" done
+      - run: >
+          curl -d "Benchmark complete ✔ Leaderboard: <space-url> Report: <pages-url>"
+          https://ntfy.sh/<your-topic>
