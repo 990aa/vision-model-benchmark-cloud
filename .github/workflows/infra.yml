@@ -8,7 +8,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
+      - uses: hashicorp/setup-terraform@v4
       - run: terraform -chdir=infra/terraform init -input=false
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
