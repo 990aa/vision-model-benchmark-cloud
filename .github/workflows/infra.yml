@@ -1,0 +1,21 @@
+name: infra
+
+on: workflow_dispatch
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform -chdir=infra/terraform init -input=false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+          TF_VAR_github_owner: ${{ github.repository_owner }}
+      - run: terraform -chdir=infra/terraform apply -auto-approve -input=false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+          TF_VAR_github_owner: ${{ github.repository_owner }}
