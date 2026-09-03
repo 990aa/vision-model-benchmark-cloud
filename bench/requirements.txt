@@ -1,0 +1,6 @@
+transformers
+datasets
+Pillow
+numpy
+psycopg2-binary
+grad-cam
