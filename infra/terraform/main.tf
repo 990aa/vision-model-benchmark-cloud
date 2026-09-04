@@ -1,7 +1,6 @@
 variable "github_owner" {}
 variable "repo" { default = "vision-model-benchmark-cloud" }
 
-# Paste your Neon Organization ID here
 variable "neon_org_id" {
   default = "org-fancy-surf-33732413"
 }
@@ -20,8 +19,9 @@ provider "github" {
 provider "neon" {}
 
 resource "neon_project" "bench" {
-  name   = "vision-benchmark"
-  org_id = var.neon_org_id
+  name                      = "vision-benchmark"
+  org_id                    = var.neon_org_id
+  history_retention_seconds = 21600
 }
 
 resource "github_actions_variable" "pages_url" {
