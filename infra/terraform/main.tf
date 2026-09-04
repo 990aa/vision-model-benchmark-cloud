@@ -4,13 +4,15 @@ variable "repo" { default = "vision-model-benchmark-cloud" }
 terraform {
   required_providers {
     github = { source = "integrations/github" }
-    neon   = { source = "neondatabase/neon" }
+    neon   = { source = "kislerdm/neon" }
   }
 }
 
 provider "github" {
   owner = var.github_owner
 }
+
+provider "neon" {}
 
 resource "neon_project" "bench" {
   name = "vision-benchmark"
