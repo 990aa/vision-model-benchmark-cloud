@@ -21,8 +21,11 @@ def q(sql, args=()):
         return cur.fetchall()
 
 def latest():
-    r = q("SELECT id FROM runs ORDER BY started_at DESC LIMIT 1")
-    return str(r[0][0]) if r else None
+    try:
+        r = q("SELECT id FROM runs ORDER BY started_at DESC LIMIT 1")
+        return str(r[0][0]) if r else None
+    except Exception:
+        return None
 
 def pipeline_html(rid):
     if not rid:
@@ -66,7 +69,7 @@ def refresh():
     head = f"**Latest run:** `{rid}`" if rid else "No runs yet."
     return head, pipeline_html(rid), board(rid), gallery(rid)
 
-with gr.Blocks(theme=gr.themes.Soft(), css=CSS, title="Vision Benchmark Mission Control") as demo:
+with gr.Blocks(title="Vision Benchmark Mission Control") as demo:
     gr.Markdown("## 🔭 Automated Vision Model Benchmark — Live Mission Control")
     run_md = gr.Markdown()
     with gr.Tabs():
@@ -76,6 +79,12 @@ with gr.Blocks(theme=gr.themes.Soft(), css=CSS, title="Vision Benchmark Mission 
             tbl = gr.Dataframe(headers=["model", "task", "score", "p50 ms", "p95 ms"])
         with gr.TabItem("🖼️ Visual Gallery"):
             gal = gr.HTML()
-    demo.load(refresh, None, [run_md, pipe, tbl, gal], every=5)
 
-demo.queue().launch()
+    # Load data on initial page open
+    demo.load(refresh, None, [run_md, pipe, tbl, gal])
+
+    # Auto-refresh every 5 seconds using gr.Timer
+    timer = gr.Timer(5)
+    timer.tick(refresh, outputs=[run_md, pipe, tbl, gal])
+
+demo.launch(theme=gr.themes.Soft(), css=CSS)
