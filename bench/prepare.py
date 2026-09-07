@@ -8,8 +8,14 @@ OUT = Path("data/sample")
 OUT.mkdir(parents=True, exist_ok=True)
 
 ds = load_dataset("microsoft/cats_vs_dogs", split="train", streaming=True)
+
+names = ["cat", "dog"]
 try:
-    names = ds.features["label"].names
+    if hasattr(ds, "features"):
+        if "labels" in ds.features and hasattr(ds.features["labels"], "names"):
+            names = ds.features["labels"].names
+        elif "label" in ds.features and hasattr(ds.features["label"], "names"):
+            names = ds.features["label"].names
 except Exception:
     names = ["cat", "dog"]
 
@@ -21,7 +27,13 @@ for i, ex in enumerate(ds):
     img.thumbnail((448, 448))
     fname = f"img_{i:03d}.jpg"
     img.save(OUT / fname, quality=88)
-    labels[fname] = names[ex["label"]]
+
+    # Handle either 'labels' or 'label'
+    raw_label = ex.get("labels", ex.get("label", 0))
+    if isinstance(raw_label, int) and raw_label < len(names):
+        labels[fname] = names[raw_label]
+    else:
+        labels[fname] = str(raw_label)
 
 (OUT / "labels.json").write_text(json.dumps(labels))
 print(f"prepared {len(labels)} images")
