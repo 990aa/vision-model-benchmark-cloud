@@ -104,13 +104,17 @@ if __name__ == "__main__":
     a = ap.parse_args()
 
     status.stage(RUN_ID, "EVAL", a.slug, "running", a.model)
-    out = run_classification(a.model, a.slug) if a.task == "image-classification" \
-          else run_detection(a.model, a.slug)
+    try:
+        out = run_classification(a.model, a.slug) if a.task == "image-classification" \
+              else run_detection(a.model, a.slug)
 
-    res = {"model": a.model, "slug": a.slug, "task": a.task,
-           "score": out["score"], "metric": out["metric"],
-           "latency_p50_ms": pct(out["lats"], 50), "latency_p95_ms": pct(out["lats"], 95)}
-    res.update(out.get("extra", {}))
-    (Path("out") / a.slug / "results.json").write_text(json.dumps(res, indent=2))
-    status.stage(RUN_ID, "EVAL", a.slug, "done", f'{a.model} score={res["score"]:.1%}')
-    print(json.dumps(res, indent=2))
+        res = {"model": a.model, "slug": a.slug, "task": a.task,
+               "score": out["score"], "metric": out["metric"],
+               "latency_p50_ms": pct(out["lats"], 50), "latency_p95_ms": pct(out["lats"], 95)}
+        res.update(out.get("extra", {}))
+        (Path("out") / a.slug / "results.json").write_text(json.dumps(res, indent=2))
+        status.stage(RUN_ID, "EVAL", a.slug, "done", f'{a.model} score={res["score"]:.1%}')
+        print(json.dumps(res, indent=2))
+    except Exception as e:
+        status.stage(RUN_ID, "EVAL", a.slug, "failed", str(e)[:100])
+        raise
