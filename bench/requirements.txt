@@ -4,3 +4,4 @@ Pillow
 numpy
 psycopg2-binary
 grad-cam
+timm
