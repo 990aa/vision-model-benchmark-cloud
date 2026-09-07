@@ -1,4 +1,5 @@
 import json
+import os
 from pathlib import Path
 from PIL import Image
 from datasets import load_dataset
@@ -28,7 +29,6 @@ for i, ex in enumerate(ds):
     fname = f"img_{i:03d}.jpg"
     img.save(OUT / fname, quality=88)
 
-    # Handle either 'labels' or 'label'
     raw_label = ex.get("labels", ex.get("label", 0))
     if isinstance(raw_label, int) and raw_label < len(names):
         labels[fname] = names[raw_label]
@@ -37,3 +37,6 @@ for i, ex in enumerate(ds):
 
 (OUT / "labels.json").write_text(json.dumps(labels))
 print(f"prepared {len(labels)} images")
+
+# Immediately terminate process and release background streaming threads
+os._exit(0)
