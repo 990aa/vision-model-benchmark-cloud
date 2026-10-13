@@ -1,0 +1,59 @@
+name: "Terraform Infrastructure"
+
+on:
+  workflow_dispatch:
+    inputs:
+      auto_apply:
+        description: "Apply Terraform changes (default: false - plan only)"
+        required: false
+        type: boolean
+        default: false
+  push:
+    paths:
+      - "infra/terraform/**"
+      - ".github/workflows/terraform.yml"
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  terraform:
+    name: "Terraform Automation"
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: infra/terraform
+
+    env:
+      TF_VAR_github_owner: ${{ github.repository_owner }}
+      TF_VAR_repo: ${{ github.event.repository.name }}
+      NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.8.0"
+
+      - name: Check Formatting
+        run: terraform fmt -check || echo "Warning: Formatting differences found"
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -no-color
+
+      - name: Terraform Apply
+        if: ${{ github.event.inputs.auto_apply == 'true' }}
+        run: terraform apply -auto-approve
