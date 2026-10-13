@@ -1,6 +1,13 @@
 name: "Terraform Infrastructure"
 
 on:
+  # Triggers automatically as soon as the Vision Benchmark workflow starts
+  workflow_run:
+    workflows: ["Vision Model Benchmark"] # <-- MUST MATCH your benchmark workflow's name
+    types:
+      - requested
+
+  # Kept so you can still test it manually with the "Run workflow" button
   workflow_dispatch:
     inputs:
       auto_apply:
@@ -8,10 +15,6 @@ on:
         required: false
         type: boolean
         default: false
-  push:
-    paths:
-      - "infra/terraform/**"
-      - ".github/workflows/terraform.yml"
 
 permissions:
   contents: read
@@ -42,18 +45,23 @@ jobs:
           terraform_version: "1.8.0"
 
       - name: Check Formatting
-        run: terraform fmt -check || echo "Warning: Formatting differences found"
+        run: |
+          terraform fmt -check || echo "Formatting differences checked"
 
       - name: Terraform Init
-        run: terraform init
+        run: |
+          terraform init
 
       - name: Terraform Validate
-        run: terraform validate
+        run: |
+          terraform validate
 
       - name: Terraform Plan
         id: plan
-        run: terraform plan -no-color
+        run: |
+          terraform plan -no-color
 
       - name: Terraform Apply
-        if: ${{ github.event.inputs.auto_apply == 'true' }}
-        run: terraform apply -auto-approve
+        if: ${{ inputs.auto_apply == true }}
+        run: |
+          terraform apply -auto-approve
